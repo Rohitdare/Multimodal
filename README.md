@@ -333,11 +333,7 @@ This project demonstrates:
 
 ---
 
-# 🔒 Security Notes
 
-- Never commit `.env` files
-- Never expose API keys publicly
-- `.gitignore` excludes sensitive files automatically
 
 ---
 
@@ -370,22 +366,9 @@ This project was built to better understand:
 
 ---
 
-# 📜 License
 
-This project is open-source and available under the MIT License.
 
----
 
-# ⭐ Acknowledgements
-
-Built for learning and experimentation with:
-- Groq
-- Llama Vision Models
-- Streamlit
-- SQLite
-- Python AI workflows
-
----
 
 <p align="center">
   <strong>🧠 From Vision → Reasoning → Structured Intelligence</strong>
