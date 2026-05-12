@@ -1,0 +1,7 @@
+streamlit
+groq
+python-dotenv
+pydantic
+easyocr
+torch
+torchvision
