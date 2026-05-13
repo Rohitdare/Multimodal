@@ -1,8 +1,24 @@
-streamlit
-groq
-python-dotenv
-pydantic
-easyocr
-torch
-torchvision
-chromadb
+# ── Core runtime ─────────────────────────────────────────────────────────────
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+python-multipart==0.0.20
+
+# ── LLM providers ────────────────────────────────────────────────────────────
+groq==0.28.0
+requests==2.32.3
+
+# ── OCR ──────────────────────────────────────────────────────────────────────
+easyocr==1.7.2
+
+# ── Vector memory ─────────────────────────────────────────────────────────────
+chromadb==1.0.8
+
+# ── Data validation ───────────────────────────────────────────────────────────
+pydantic==2.11.4
+
+# ── Config ────────────────────────────────────────────────────────────────────
+python-dotenv==1.1.0
+
+# ── Deep learning (required by EasyOCR) ──────────────────────────────────────
+torch==2.7.0
+torchvision==0.22.0

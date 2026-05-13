@@ -7,16 +7,9 @@ from database.db import (
     clear_history
 )
 
-from core.vision import encode_image
-from core.parser import parse_json
-from core.router import classify_task, get_prompt, get_schema
-from core.validator import validate_output
-from core.ocr import extract_text
 from core.vector_store import store_embedding, query_similar
-from core.rag import build_rag_context
-
-from services.analysis_service import analyze_image
 from services.storage_service import save_uploaded_file
+from agents.coordinator import run_pipeline
 
 # -------------------------
 # App setup
@@ -74,137 +67,55 @@ if uploaded_file:
                 image_bytes
             )
 
-            ocr_text = extract_text(image_path)
+            with st.spinner("Analyzing image..."):
+                result = run_pipeline(
+                    uploaded_file,
+                    image_bytes,
+                    question,
+                    max_context_items=max_context_items
+                )
+
+            st.info(f"Task: {result['task_type']}")
 
             with st.expander("Extracted OCR Text"):
-                st.code(ocr_text[:2000])
+                st.code(result["ocr"]["ocr_text"][:2000])
 
-            # -------------------------
-            # Encode image
-            # -------------------------
-            base64_image = encode_image(image_bytes)
-
-            # -------------------------
-            # Task routing
-            # -------------------------
-            task_type = classify_task(question)
-
-            system_prompt = get_prompt(task_type)
-
-            schema_class = get_schema(task_type)
-
-            st.info(f"Detected Task Type: {task_type}")
-
-            # -------------------------
-            # Build messages
-            # -------------------------
-            similar_docs = query_similar(
-                question,
-                task_type=task_type,
-                n_results=5
-            )
-            rag_context = build_rag_context(
-                similar_docs,
-                max_items=max_context_items
-            )
-            
             with st.expander("RAG Context (Optimized)"):
-                if not similar_docs:
+                if not result["memory"]["memory"]:
                     st.write("No similar memory found")
                 else:
-                    for item in similar_docs:
+                    for item in result["memory"]["memory"]:
                         st.write(f"Score: {item['score']:.2f}")
                         st.write(item["text"])
                         st.divider()
 
-            messages = [
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"""
-User Question:
-{question}
-
-OCR Extracted Text:
-{ocr_text}
-
-{rag_context}
-"""
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{uploaded_file.type};base64,{base64_image}"
-                            }
-                        }
-                    ]
-                }
-            ]
-
-            # -------------------------
-            # Model inference
-            # -------------------------
-            with st.spinner("Analyzing image..."):
-
-                raw_output = analyze_image(messages)
-
-            # -------------------------
-            # Parse response
-            # -------------------------
-            parsed_output, error = parse_json(raw_output)
-
-            validated_output, validation_error = validate_output(
-                schema_class,
-                parsed_output
-            )
-
-            if validation_error:
-
-                st.error("Schema validation failed")
-
-                st.code(validation_error)
-
-                st.json(parsed_output)
-
+            if "error" in result["final"]:
+                st.error(result["final"]["error"])
+                if "raw" in result["final"]:
+                    st.json(result["final"]["raw"])
                 st.stop()
+            else:
+                st.subheader("Structured Output")
+                st.json(result["final"]["result"])
 
-            if error:   
-                st.error(error)
-                st.code(raw_output)
-                st.stop()
+                # -------------------------
+                # Save analysis
+                # -------------------------
+                save_analysis(
+                    uploaded_file.name,
+                    question,
+                    result["final"]["result"]
+                )
 
-            # -------------------------
-            # Save analysis
-            # -------------------------
-            save_analysis(
-                uploaded_file.name,
-                question,
-                validated_output
-            )
+                store_embedding(
+                    record_id=str(uploaded_file.name),
+                    question=question,
+                    result_text=str(result["final"]["result"]),
+                    task_type=result["task_type"]
+                )
 
-            store_embedding(
-                record_id=str(uploaded_file.name),
-                question=question,
-                result_text=str(validated_output),
-                task_type=task_type
-            )
-
-            # -------------------------
-            # Render results
-            # -------------------------
             st.success("Analysis complete")
-
             st.caption(f"Saved image to: {image_path}")
-
-            st.subheader("Structured Output")
-
-            st.json(validated_output)
 
         except Exception as e:
 

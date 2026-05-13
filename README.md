@@ -1,375 +1,177 @@
-# 🤖 Structured Multimodal AI Agent
+# 🧠 Multimodal AI Agent
 
-<p align="center">
-  <img src="https://img.shields.io/badge/🤖_AI-Multimodal_Intelligence-8E44AD?style=for-the-badge&labelColor=2C3E50" alt="Multimodal AI"/>
-</p>
+A full-stack document intelligence system that combines **OCR**, **vector memory (RAG)**, and **multi-provider LLM reasoning** to extract structured JSON from images.
 
-<h1 align="center">
-  🧠 Multimodal Insight Engine
-</h1>
-
-<h3 align="center">
-  Bridging Vision and Logic into Structured Intelligence
-</h3>
-
-<p align="center">
-  <strong>From Raw Pixels → Actionable JSON Data</strong><br/>
-  <em>Stop just describing images. Start extracting structured, programmable insights.</em>
-</p>
-
-<p align="center">
-  <a href="#-current-capabilities"><img src="https://img.shields.io/badge/📊-Capabilities-2196F3?style=flat-square" alt="Capabilities"/></a>
-  <a href="#-system-architecture"><img src="https://img.shields.io/badge/🏗️-Architecture-4CAF50?style=flat-square" alt="Architecture"/></a>
-  <a href="#-quick-start"><img src="https://img.shields.io/badge/🚀-Quick_Start-FF9800?style=flat-square" alt="Quick Start"/></a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/Groq-Llama_4_Scout-f55d42?style=for-the-badge" alt="Groq"/>
-  <img src="https://img.shields.io/badge/Streamlit-UI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"/>
-  <img src="https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite"/>
-</p>
+Built with **FastAPI** (backend) + **Next.js 16** (frontend).
 
 ---
 
-# 📊 Project Vision
+## Architecture
 
-<table>
-<tr>
-<td width="60%">
-
-## The Core Idea
-
-Most beginner vision AI apps only generate image descriptions.
-
-This project explores something more useful:
-
-> Turning images into structured, machine-readable intelligence.
-
-Instead of returning plain text captions, the system combines:
-- image understanding
-- user intent
-- multimodal reasoning
-- structured JSON generation
-- persistent storage
-
-The result is a lightweight multimodal agent pipeline capable of producing actionable outputs from visual inputs.
-
----
-
-## What This Project Explores
-
-This project was built as a learning-focused exploration into:
-
-- Multimodal AI systems
-- Vision + language reasoning
-- Structured LLM outputs
-- JSON-constrained responses
-- Persistent memory using SQLite
-- AI application architecture
-- Prompt engineering
-- Streamlit-based AI interfaces
-
----
-
-## Current Capabilities
-
-The agent can:
-
-- Upload and analyze images
-- Accept natural language questions
-- Reason across image + text together
-- Generate structured JSON responses
-- Store analysis history in SQLite
-- Display historical analyses inside the UI
-
-The output schema changes dynamically depending on:
-- the uploaded image
-- the user’s question
-- the inferred task
-
-Examples include:
-- receipt analysis
-- product evaluation
-- note summarization
-- visual reasoning tasks
-
-</td>
-<td width="40%" align="center">
-
-## ⚡ Current Stack
-
-| Component | Technology |
-|:------|:-----|
-| **Vision Model** | Llama 4 Scout |
-| **Inference Engine** | Groq API |
-| **Frontend** | Streamlit |
-| **Persistence** | SQLite |
-| **Language** | Python |
-
-<br/>
-
-## 🧠 Key Concepts Learned
-
-- Multimodal inference
-- Structured JSON prompting
-- API orchestration
-- Base64 image handling
-- Persistent AI workflows
-- Database integration
-- Modular AI system design
-
-<br/>
-
-## 🚀 Future Improvements
-
-- OCR tool integration
-- Prompt routing
-- Image storage system
-- PostgreSQL migration
-- Vector search
-- Multi-step agents
-- Tool calling
-- Async processing
-
-</td>
-</tr>
-</table>
-
----
-
-# 🏗️ System Architecture
-
-```mermaid
-graph LR
-    A[Image Upload + User Query] --> B[Streamlit Interface]
-    B --> C[Image Encoding Layer]
-    C --> D[Groq Llama Vision Model]
-    D --> E[Structured JSON Parsing]
-    E --> F[SQLite Persistence]
-    E --> G[Interactive Results UI]
+```
+Image Upload
+     │
+     ▼
+OCR Agent (EasyOCR)
+     │
+     ▼
+Memory Agent (ChromaDB RAG) ──► similar past analyses
+     │
+     ▼
+Reasoning Agent (Groq → OpenRouter → Local fallback)
+     │
+     ▼
+Validator Agent (Pydantic schema enforcement)
+     │
+     ▼
+Structured JSON Response
 ```
 
+### Task Types
+
+| Task | Triggered by |
+|------|-------------|
+| `receipt` | "receipt", "spending", "expense", "bill" |
+| `product` | "buy", "product", "worth", "review" |
+| `notes` | "summary", "summarize", "meeting", "notes" |
+| `documents` | "document", "paper", "letter", "form" |
+| `screenshots` | "screenshot", "app", "ui", "interface" |
+| `general` | everything else |
+
 ---
 
-# 📸 Application Preview
+## Project Structure
 
-## Main Interface
-
-![App Screenshot](screenshots/app.png)
-
-## Structured JSON Output
-
-![Output Screenshot](screenshots/output.png)
-
----
-
-# 📂 Project Structure
-
-```text
+```
 multimodal-agent/
-│
-├── app.py
-├── db.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── .env
-├── agent_data.db
-│
-├── screenshots/
-│   ├── app.png
-│   └── output.png
-│
-└── venv/
+├── agents/                 # Agent modules (OCR, memory, reasoning, validator, coordinator)
+├── backend/
+│   ├── main.py             # FastAPI app entry point
+│   └── routes/             # API route handlers
+├── core/                   # Shared utilities (config, OCR, RAG, prompts, router, parser)
+├── database/               # SQLite persistence
+├── frontend/               # Next.js UI
+├── models/                 # Pydantic response schemas
+├── services/
+│   ├── llm/                # LLM provider clients (Groq, OpenRouter, Local)
+│   └── storage_service.py  # File upload handling
+├── .env.example            # Environment variable template
+└── requirements.txt
 ```
 
 ---
 
-# ⚙️ How It Works
+## Quick Start
 
-The application follows a simple multimodal reasoning pipeline:
-
-1. User uploads an image
-2. User asks a question about the image
-3. Image is converted into base64 format
-4. Image + text are sent together to the LLM
-5. Groq executes multimodal inference
-6. Model returns structured JSON output
-7. JSON is parsed and validated
-8. Analysis is stored inside SQLite
-9. Previous analyses are displayed in history
-
----
-
-# 🧪 Example Use Cases
-
-## 🛍️ Product Analysis
-
-**Input:** Product image + “Should I buy this?”
-
-```json
-{
-  "buy": true,
-  "score": 8,
-  "best_for": "short travel",
-  "concerns": ["small storage capacity"],
-  "verdict": "Good for lightweight travel use"
-}
-```
-
----
-
-## 🧾 Receipt Analysis
-
-**Input:** Receipt image + “Am I overspending?”
-
-```json
-{
-  "total_spent": 3847,
-  "largest_category": "food",
-  "verdict": "overspending"
-}
-```
-
----
-
-## 📝 Whiteboard Summary
-
-**Input:** Meeting notes image + “Summarize this meeting”
-
-```json
-{
-  "topic": "Sprint Planning",
-  "action_items": [
-    "Review API",
-    "Deploy authentication"
-  ],
-  "open_questions": [
-    "Which cloud provider to use?"
-  ]
-}
-```
-
----
-
-# 🚀 Quick Start
-
-## 1. Clone Repository
+### 1. Clone & set up environment
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/multimodal-agent.git
+git clone <repo-url>
 cd multimodal-agent
-```
 
----
-
-## 2. Create Virtual Environment
-
-### Windows
-
-```bash
 python -m venv venv
-venv\Scripts\activate
-```
+venv\Scripts\activate          # Windows
+# source venv/bin/activate    # macOS/Linux
 
-### Mac/Linux
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
----
-
-## 3. Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 4. Configure Environment Variables
-
-Create a `.env` file:
-
-```env
-GROQ_API_KEY=your_api_key_here
-```
-
----
-
-## 5. Run the Application
+### 2. Configure environment variables
 
 ```bash
-streamlit run app.py
+cp .env.example .env
+# Edit .env and add your API keys
+```
+
+Required:
+- `GROQ_API_KEY` — [Get one at console.groq.com](https://console.groq.com)
+- `OPENROUTER_API_KEY` — [Get one at openrouter.ai](https://openrouter.ai) *(fallback)*
+
+### 3. Start the backend
+
+```bash
+uvicorn backend.main:app --reload
+# API available at http://localhost:8000
+# Swagger docs at http://localhost:8000/docs
+```
+
+### 4. Start the frontend
+
+```bash
+cd frontend
+cp .env.local.example .env.local
+npm install
+npm run dev
+# UI available at http://localhost:3000
 ```
 
 ---
 
-# 📦 Requirements
+## API Reference
 
-Core dependencies:
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/analyze/` | Analyse an image — multipart form with `file` + `question` |
+| `GET` | `/history/` | Get all past analyses |
+| `DELETE` | `/history/` | Clear all history |
+| `GET` | `/memory/search?query=...` | Semantic search over past analyses |
+| `GET` | `/health` | Health check |
+| `GET` | `/docs` | Swagger UI |
 
-- streamlit
-- groq
-- python-dotenv
+### Analyze request example
 
----
+```bash
+curl -X POST http://localhost:8000/analyze/ \
+  -F "file=@receipt.jpg" \
+  -F "question=Analyze this receipt"
+```
 
-# 🧠 Technical Concepts Demonstrated
+### Analyze response example
 
-This project demonstrates:
-
-- Multimodal LLM integration
-- Vision-language reasoning
-- Structured JSON enforcement
-- Prompt engineering
-- SQLite persistence
-- Streamlit application design
-- API orchestration
-- Local AI workflow architecture
-
----
-
-
-
----
-
-# 🌱 Future Roadmap
-
-## Planned Enhancements
-
-- OCR pipeline integration
-- Image classification routing
-- Prompt specialization
-- Tool-calling workflows
-- PostgreSQL backend
-- Authentication system
-- Cloud deployment
-- Async job queue
-- Vector database integration
-- Agent memory system
+```json
+{
+  "task_type": "receipt",
+  "ocr_text": "Walmart\nMilk $3.49\nBread $2.99\nTotal $6.48",
+  "output": {
+    "result": {
+      "store": "Walmart",
+      "total_spent": 6.48,
+      "largest_category": "Groceries",
+      "expensive_items": ["Milk"],
+      "verdict": "Low spending, within budget."
+    }
+  }
+}
+```
 
 ---
 
-# 🎯 Learning Goals
+## LLM Provider Fallback
 
-This project was built to better understand:
+The system automatically tries providers in order:
 
-- How multimodal AI systems work
-- How structured LLM outputs improve reliability
-- How AI pipelines are architected
-- How persistent storage integrates with AI workflows
-- How to move from “AI demos” to real AI systems
+1. **Groq** (primary — fast inference)
+2. **OpenRouter** (fallback — GPT-4o-mini)
+3. **Local Ollama** (final fallback — llava)
+
+Configure via `ACTIVE_PROVIDER` env var or let the fallback chain handle it automatically.
 
 ---
 
+## Environment Variables
 
+See [`.env.example`](.env.example) for the full list with documentation.
 
+---
 
+## Tech Stack
 
-<p align="center">
-  <strong>🧠 From Vision → Reasoning → Structured Intelligence</strong>
-</p>
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI, Uvicorn |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS v4 |
+| OCR | EasyOCR |
+| Vector Memory | ChromaDB (persistent) |
+| LLM | Groq / OpenRouter / Ollama |
+| Database | SQLite |
+| Validation | Pydantic v2 |
