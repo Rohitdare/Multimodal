@@ -12,6 +12,8 @@ from core.parser import parse_json
 from core.router import classify_task, get_prompt, get_schema
 from core.validator import validate_output
 from core.ocr import extract_text
+from core.vector_store import store_embedding, query_similar
+from core.rag import build_rag_context
 
 from services.analysis_service import analyze_image
 from services.storage_service import save_uploaded_file
@@ -38,6 +40,13 @@ uploaded_file = st.file_uploader(
 
 question = st.text_input(
     "Ask something about the image"
+)
+
+max_context_items = st.slider(
+    "Memory Context Size",
+    min_value=1,
+    max_value=5,
+    value=3
 )
 
 # -------------------------
@@ -67,9 +76,8 @@ if uploaded_file:
 
             ocr_text = extract_text(image_path)
 
-            st.subheader("Extracted OCR Text")
-
-            st.code(ocr_text[:2000])
+            with st.expander("Extracted OCR Text"):
+                st.code(ocr_text[:2000])
 
             # -------------------------
             # Encode image
@@ -90,6 +98,25 @@ if uploaded_file:
             # -------------------------
             # Build messages
             # -------------------------
+            similar_docs = query_similar(
+                question,
+                task_type=task_type,
+                n_results=5
+            )
+            rag_context = build_rag_context(
+                similar_docs,
+                max_items=max_context_items
+            )
+            
+            with st.expander("RAG Context (Optimized)"):
+                if not similar_docs:
+                    st.write("No similar memory found")
+                else:
+                    for item in similar_docs:
+                        st.write(f"Score: {item['score']:.2f}")
+                        st.write(item["text"])
+                        st.divider()
+
             messages = [
                 {
                     "role": "system",
@@ -106,6 +133,8 @@ User Question:
 
 OCR Extracted Text:
 {ocr_text}
+
+{rag_context}
 """
                         },
                         {
@@ -157,6 +186,13 @@ OCR Extracted Text:
                 uploaded_file.name,
                 question,
                 validated_output
+            )
+
+            store_embedding(
+                record_id=str(uploaded_file.name),
+                question=question,
+                result_text=str(validated_output),
+                task_type=task_type
             )
 
             # -------------------------
@@ -224,3 +260,20 @@ else:
             except Exception:
 
                 st.code(result_json)
+
+st.divider()
+st.subheader("🔍 Semantic Search")
+
+search_query = st.text_input("Search similar past analyses")
+
+if search_query and st.button("Search Memory"):
+
+    results = query_similar(search_query)
+
+    st.write("### Similar Results")
+
+    try:
+        for doc in results:
+            st.write(doc)
+    except Exception:
+        st.write(results)
