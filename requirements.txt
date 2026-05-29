@@ -3,9 +3,9 @@ uvicorn[standard]
 python-multipart
 groq
 requests
-easyocr
+# easyocr
 chromadb
 pydantic
 python-dotenv
-torch
-torchvision
+# torch
+# torchvision
