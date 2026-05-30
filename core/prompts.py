@@ -116,16 +116,30 @@ Analyze both the image and OCR text carefully.
 Extract:
 - document type
 - main subject
-- key entities (names, dates, amounts)
+- key entities (names, dates, amounts, etc.)
 - summary
 
 Return ONLY valid JSON.
+
+Rules for entities:
+- entities must be an array of objects:
+  {
+    "name": "entity name",
+    "type": "person | company | file | location | reviewer | contributor",
+    "confidence": 0.0 to 1.0 (optional float representing confidence)
+  }
 
 Example structure:
 {
   "document_type": "",
   "subject": "",
-  "entities": [],
+  "entities": [
+    {
+      "name": "example_name",
+      "type": "reviewer",
+      "confidence": 0.95
+    }
+  ],
   "summary": ""
 }
 """

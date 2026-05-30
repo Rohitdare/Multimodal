@@ -25,6 +25,8 @@ interface HistoryItem {
   image_name: string;
   question: string;
   result: Record<string, unknown>;
+  task_type: string;
+  ocr_text: string;
   created_at: string;
 }
 
@@ -184,6 +186,17 @@ export default function Home() {
             history.map((item) => (
               <div
                 key={item.id}
+                onClick={() => {
+                  setQuestion(item.question);
+                  setResult({
+                    task_type: item.task_type || "general",
+                    ocr_text: item.ocr_text || "",
+                    output: {
+                      result: item.result,
+                    },
+                  });
+                  setActiveTab("result");
+                }}
                 className="p-3 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer"
               >
                 <p className="text-xs font-medium truncate">{item.image_name}</p>
@@ -319,7 +332,7 @@ export default function Home() {
                   </h3>
                   <div className="space-y-2">
                     {[
-                      { label: "OCR Engine", status: "Active", color: "text-green-500" },
+                      { label: "OCR Engine", status: "Off", color: "text-red-500" },
                       { label: "Vector Memory", status: "Persistent", color: "text-blue-500" },
                       { label: "LLM (Groq)", status: "Primary", color: "text-indigo-400" },
                       { label: "Fallback", status: "OpenRouter", color: "text-yellow-500" },

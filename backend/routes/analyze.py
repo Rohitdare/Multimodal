@@ -49,9 +49,15 @@ async def analyze_image(
     final = result["final"]
     if "result" in final:
         try:
-            save_analysis(file.filename, question, final["result"])
+            analysis_id = save_analysis(
+                file.filename,
+                question,
+                final["result"],
+                task_type=result["task_type"],
+                ocr_text=result["ocr"]["ocr_text"]
+            )
             store_embedding(
-                record_id=file.filename,
+                record_id=str(analysis_id),
                 question=question,
                 result_text=str(final["result"]),
                 task_type=result["task_type"],
