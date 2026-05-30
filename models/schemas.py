@@ -15,7 +15,6 @@ def normalize_list_strings(v: Any) -> List[str]:
     if isinstance(v, str):
         if v.lower().strip() in ("", "none", "n/a", "none found", "nothing"):
             return []
-        # If it's a comma-separated or newline-separated list, split it
         if "," in v:
             return [x.strip() for x in v.split(",") if x.strip()]
         if "\n" in v:
@@ -23,7 +22,62 @@ def normalize_list_strings(v: Any) -> List[str]:
         return [v.strip()]
     if not isinstance(v, list):
         return [str(v)]
-    return [str(item).strip() for item in v if item is not None]
+    result = []
+    for item in v:
+        if item is None:
+            continue
+        if isinstance(item, dict):
+            # If the LLM returned a dict instead of a string, extract a meaningful value
+            result.append(item.get("name", "") or item.get("value", "") or str(item))
+        else:
+            result.append(str(item).strip())
+    return result
+
+
+def normalize_entities(v: Any) -> List[dict]:
+    """Normalize any shape of entities data into a list of {name, type, confidence} dicts."""
+    if v is None:
+        return []
+    if isinstance(v, str):
+        if v.lower().strip() in ("", "none", "n/a", "no entities", "none found"):
+            return []
+        names = [x.strip() for x in v.split(",") if x.strip()]
+        return [{"name": name, "type": "unknown"} for name in names]
+
+    if isinstance(v, dict):
+        v = [v]
+    elif not isinstance(v, list):
+        v = [v]
+
+    normalized = []
+    for item in v:
+        if item is None:
+            continue
+        if isinstance(item, str):
+            normalized.append({"name": item, "type": "unknown"})
+        elif isinstance(item, Entity):
+            normalized.append(item.model_dump())
+        elif isinstance(item, dict):
+            name = item.get("name") or item.get("entity") or item.get("value") or ""
+            if not name:
+                for k, val in item.items():
+                    if k not in ("type", "confidence") and isinstance(val, str):
+                        name = val
+                        break
+            entity_type = item.get("type") or "unknown"
+            confidence = item.get("confidence")
+            try:
+                confidence = float(confidence) if confidence is not None else None
+            except (ValueError, TypeError):
+                confidence = None
+            normalized.append({
+                "name": str(name),
+                "type": str(entity_type),
+                "confidence": confidence,
+            })
+        else:
+            normalized.append({"name": str(item), "type": "unknown"})
+    return normalized
 
 
 class ProductAnalysis(BaseModel):
@@ -73,46 +127,8 @@ class DocumentAnalysis(BaseModel):
 
     @field_validator("entities", mode="before")
     @classmethod
-    def normalize_entities(cls, v: Any) -> List[dict]:
-        if v is None:
-            return []
-        if isinstance(v, str):
-            if v.lower().strip() in ("", "none", "n/a", "no entities", "none found"):
-                return []
-            names = [x.strip() for x in v.split(",") if x.strip()]
-            return [{"name": name, "type": "unknown"} for name in names]
-        
-        if isinstance(v, dict):
-            v = [v]
-        elif not isinstance(v, list):
-            v = [v]
-        
-        normalized = []
-        for item in v:
-            if isinstance(item, str):
-                normalized.append({"name": item, "type": "unknown"})
-            elif isinstance(item, dict):
-                name = item.get("name") or item.get("entity") or ""
-                if not name:
-                    # Try to find any other string field
-                    for k, val in item.items():
-                        if k != "type" and isinstance(val, str):
-                            name = val
-                            break
-                entity_type = item.get("type") or "unknown"
-                confidence = item.get("confidence")
-                try:
-                    confidence = float(confidence) if confidence is not None else None
-                except (ValueError, TypeError):
-                    confidence = None
-                normalized.append({
-                    "name": str(name),
-                    "type": str(entity_type),
-                    "confidence": confidence
-                })
-            else:
-                normalized.append({"name": str(item), "type": "unknown"})
-        return normalized
+    def validate_entities(cls, v: Any) -> List[dict]:
+        return normalize_entities(v)
 
 
 class ScreenshotAnalysis(BaseModel):
@@ -125,4 +141,3 @@ class ScreenshotAnalysis(BaseModel):
     @classmethod
     def validate_lists(cls, v: Any) -> List[str]:
         return normalize_list_strings(v)
-
