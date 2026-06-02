@@ -15,6 +15,12 @@ import {
   Loader2,
   Trash2,
   X,
+  Check,
+  Star,
+  Bookmark,
+  ListTodo,
+  HelpCircle,
+  Tags,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -385,44 +391,383 @@ export default function Home() {
                 </div>
 
                 {/* Structured result */}
-                {activeTab === "result" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-zinc-900/50 border border-blue-500/20 p-5 rounded-3xl">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-xs font-bold text-blue-400 flex items-center gap-2 uppercase tracking-widest">
-                          <FileJson className="w-3.5 h-3.5" /> JSON Output
-                        </h4>
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      </div>
-                      <pre className="text-xs bg-black/40 p-4 rounded-xl overflow-x-auto text-blue-100/80 font-mono leading-relaxed max-h-[400px] overflow-y-auto">
-                        {JSON.stringify(
-                          result.output?.result ?? result.output,
-                          null,
-                          2
-                        )}
-                      </pre>
-                    </div>
+                {activeTab === "result" && (() => {
+                  const data = (result.output?.result ?? result.output?.raw ?? result.output) as Record<string, any> | null;
+                  const hasError = !!result.output?.error;
+                  
+                  const renderVisualizer = () => {
+                    if (!data || typeof data !== "object") return null;
 
-                    <div className="bg-zinc-900 border border-white/5 p-5 rounded-3xl space-y-3">
-                      <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                        Analysis Summary
-                      </h4>
-                      <p className="text-sm text-zinc-300 leading-relaxed">
-                        Agent identified the document as a{" "}
-                        <strong className="text-white capitalize">
-                          {result.task_type}
-                        </strong>{" "}
-                        and extracted structured data successfully.
-                      </p>
-                      {result.output?.error && (
-                        <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          {result.output.error}
+                    switch (result.task_type) {
+                      case "receipt":
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+                              <div>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Store</p>
+                                <h5 className="text-lg font-bold text-white">{data.store || "Unknown Store"}</h5>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Total Spent</p>
+                                <span className="text-2xl font-black text-blue-400 font-mono">
+                                  ${typeof data.total_spent === 'number' ? data.total_spent.toFixed(2) : data.total_spent || '0.00'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {data.largest_category && (
+                              <div className="p-3 bg-zinc-900/80 border border-white/5 rounded-xl flex items-center justify-between">
+                                <span className="text-xs text-zinc-400">Largest Category:</span>
+                                <span className="text-xs font-bold text-zinc-200 capitalize bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
+                                  {data.largest_category}
+                                </span>
+                              </div>
+                            )}
+
+                            {data.expensive_items && Array.isArray(data.expensive_items) && data.expensive_items.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold text-zinc-400 flex items-center gap-1.5 px-1">
+                                  <Tags className="w-3.5 h-3.5 text-blue-400" /> Expensive Items
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {data.expensive_items.map((item: string, idx: number) => (
+                                    <span key={idx} className="text-xs font-medium bg-red-500/10 text-red-400 px-3 py-1.5 rounded-xl border border-red-500/20">
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {data.verdict && (
+                              <div className="p-4 bg-indigo-500/5 border border-indigo-500/15 rounded-2xl space-y-1">
+                                <span className="text-[10px] text-indigo-400 uppercase tracking-wider font-bold">Verdict / Insights</span>
+                                <p className="text-xs text-zinc-300 leading-relaxed font-medium">{data.verdict}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      case "product":
+                        const scoreVal = typeof data.score === 'number' ? data.score : parseInt(data.score) || 0;
+                        const isBuy = data.buy === true || String(data.buy).toLowerCase() === 'true';
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl flex flex-col justify-between">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Recommendation</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  {isBuy ? (
+                                    <div className="bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1">
+                                      <Check className="w-3.5 h-3.5" /> BUY
+                                    </div>
+                                  ) : (
+                                    <div className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1">
+                                      <X className="w-3.5 h-3.5" /> AVOID
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl flex flex-col justify-between">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Product Score</span>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <div className="flex items-center text-yellow-400 gap-0.5">
+                                    <Star className="w-4 h-4 fill-current" />
+                                    <span className="text-lg font-black font-mono">{scoreVal}/10</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase px-1">
+                                <span>Quality Score</span>
+                                <span>{scoreVal * 10}%</span>
+                              </div>
+                              <div className="w-full bg-zinc-950 border border-white/5 rounded-full h-2.5 overflow-hidden">
+                                <div 
+                                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${Math.min(100, Math.max(0, scoreVal * 10))}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {data.best_for && (
+                              <div className="p-3 bg-zinc-900/80 border border-white/5 rounded-xl flex items-center justify-between">
+                                <span className="text-xs text-zinc-400">Best For:</span>
+                                <span className="text-xs font-bold text-blue-400 bg-blue-500/5 px-2.5 py-1 rounded-full border border-blue-500/10">
+                                  {data.best_for}
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {data.pros && Array.isArray(data.pros) && data.pros.length > 0 && (
+                                <div className="p-3 bg-green-500/5 border border-green-500/10 rounded-2xl space-y-2">
+                                  <span className="text-[10px] text-green-400 uppercase tracking-wider font-bold">Pros</span>
+                                  <ul className="space-y-1.5">
+                                    {data.pros.map((p: string, idx: number) => (
+                                      <li key={idx} className="text-xs text-zinc-300 flex items-start gap-1.5">
+                                        <span className="text-green-400 font-bold shrink-0 mt-0.5">✓</span>
+                                        <span>{p}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {data.cons && Array.isArray(data.cons) && data.cons.length > 0 && (
+                                <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-2xl space-y-2">
+                                  <span className="text-[10px] text-red-400 uppercase tracking-wider font-bold">Cons</span>
+                                  <ul className="space-y-1.5">
+                                    {data.cons.map((c: string, idx: number) => (
+                                      <li key={idx} className="text-xs text-zinc-300 flex items-start gap-1.5">
+                                        <span className="text-red-400 font-bold shrink-0 mt-0.5">✕</span>
+                                        <span>{c}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+
+                            {data.verdict && (
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl space-y-1">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Detailed Verdict</span>
+                                <p className="text-xs text-zinc-300 leading-relaxed font-medium">{data.verdict}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      case "notes":
+                        return (
+                          <div className="space-y-4">
+                            {data.topic && (
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl flex items-center gap-3">
+                                <Bookmark className="w-5 h-5 text-indigo-400" />
+                                <div>
+                                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Topic</p>
+                                  <h5 className="text-sm font-bold text-white">{data.topic}</h5>
+                                </div>
+                              </div>
+                            )}
+
+                            {data.key_points && Array.isArray(data.key_points) && data.key_points.length > 0 && (
+                              <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-2xl space-y-2">
+                                <span className="text-[10px] text-indigo-400 uppercase tracking-wider font-bold flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Key Points
+                                </span>
+                                <ul className="space-y-2">
+                                  {data.key_points.map((pt: string, idx: number) => (
+                                    <li key={idx} className="text-xs text-zinc-300 flex items-start gap-2">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                                      <span>{pt}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {data.action_items && Array.isArray(data.action_items) && data.action_items.length > 0 && (
+                              <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl space-y-2">
+                                <span className="text-[10px] text-green-400 uppercase tracking-wider font-bold flex items-center gap-1">
+                                  <ListTodo className="w-3.5 h-3.5" /> Action Items
+                                </span>
+                                <ul className="space-y-2">
+                                  {data.action_items.map((act: string, idx: number) => (
+                                    <li key={idx} className="text-xs text-zinc-300 flex items-start gap-2 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                                      <input type="checkbox" readOnly checked className="mt-0.5 border-white/20 accent-green-500 rounded" />
+                                      <span>{act}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {data.open_questions && Array.isArray(data.open_questions) && data.open_questions.length > 0 && (
+                              <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-2">
+                                <span className="text-[10px] text-amber-400 uppercase tracking-wider font-bold flex items-center gap-1">
+                                  <HelpCircle className="w-3.5 h-3.5" /> Open Questions
+                                </span>
+                                <ul className="space-y-2">
+                                  {data.open_questions.map((q: string, idx: number) => (
+                                    <li key={idx} className="text-xs text-zinc-300 flex items-start gap-2 italic">
+                                      <span className="text-amber-400 font-bold">?</span>
+                                      <span>{q}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      case "documents":
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Document Type</span>
+                                <h5 className="text-xs font-bold text-white capitalize mt-1">{data.document_type || "General Document"}</h5>
+                              </div>
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Main Subject</span>
+                                <h5 className="text-xs font-bold text-white truncate mt-1">{data.subject || "Not Specified"}</h5>
+                              </div>
+                            </div>
+
+                            {data.summary && (
+                              <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-2xl space-y-1">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Document Summary</span>
+                                <p className="text-xs text-zinc-300 leading-relaxed font-medium">{data.summary}</p>
+                              </div>
+                            )}
+
+                            {data.entities && Array.isArray(data.entities) && data.entities.length > 0 && (
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl space-y-3">
+                                <span className="text-[10px] text-blue-400 uppercase tracking-wider font-bold flex items-center gap-1">
+                                  <Tags className="w-3.5 h-3.5" /> Extracted Entities
+                                </span>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {data.entities.map((ent: any, idx: number) => {
+                                    if (!ent || typeof ent !== 'object') return null;
+                                    const entityType = ent.type || "unknown";
+                                    let badgeColor = "bg-zinc-800 text-zinc-400 border-zinc-700/50";
+                                    if (entityType.match(/person|reviewer|user|contributor/i)) badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                                    else if (entityType.match(/company|org/i)) badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+                                    else if (entityType.match(/file|doc/i)) badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                                    else if (entityType.match(/date|time/i)) badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+                                    return (
+                                      <div key={idx} className="flex items-center justify-between p-2.5 bg-black/20 rounded-xl border border-white/5">
+                                        <span className="text-xs font-bold text-white">{ent.name || ent.value || ent.entity || ""}</span>
+                                        <div className="flex items-center gap-2">
+                                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badgeColor} capitalize`}>
+                                            {entityType}
+                                          </span>
+                                          {ent.confidence !== undefined && ent.confidence !== null && (
+                                            <span className="text-[10px] font-mono text-zinc-500">
+                                              {Math.round(ent.confidence * 100)}%
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      case "screenshots":
+                        return (
+                          <div className="space-y-4">
+                            {data.application && (
+                              <div className="p-4 bg-zinc-900/80 border border-white/5 rounded-2xl">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Application / Website</span>
+                                <h5 className="text-sm font-bold text-white mt-1">{data.application}</h5>
+                              </div>
+                            )}
+
+                            {data.context && (
+                              <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-2xl space-y-1">
+                                <span className="text-[10px] text-indigo-400 uppercase tracking-wider font-bold">Screenshot Context</span>
+                                <p className="text-xs text-zinc-300 leading-relaxed font-medium">{data.context}</p>
+                              </div>
+                            )}
+
+                            {data.ui_elements && Array.isArray(data.ui_elements) && data.ui_elements.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold text-zinc-400 flex items-center gap-1.5 px-1">
+                                  <Terminal className="w-3.5 h-3.5 text-zinc-400" /> UI Elements Detected
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {data.ui_elements.map((el: string, idx: number) => (
+                                    <span key={idx} className="text-xs font-semibold bg-white/5 text-zinc-300 px-3 py-1.5 rounded-xl border border-white/5">
+                                      {el}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {data.text_content && (
+                              <div className="p-4 bg-black/40 border border-white/5 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Key Text Content</span>
+                                <p className="text-xs text-zinc-400 leading-relaxed max-h-[150px] overflow-y-auto font-mono whitespace-pre-wrap">
+                                  {data.text_content}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      default:
+                        return (
+                          <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 space-y-3">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Properties</span>
+                            <div className="space-y-2">
+                              {Object.entries(data).map(([key, val]) => {
+                                if (key === "error" || key === "raw") return null;
+                                return (
+                                  <div key={key} className="flex flex-col gap-1 p-2.5 bg-black/20 rounded-xl border border-white/5">
+                                    <span className="text-[10px] text-zinc-500 capitalize font-bold">{key.replace(/_/g, " ")}</span>
+                                    <span className="text-xs text-zinc-200">
+                                      {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                    }
+                  };
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                      <div className="bg-zinc-900/50 border border-blue-500/20 p-5 rounded-3xl flex flex-col">
+                        <div className="flex items-center justify-between mb-3 shrink-0">
+                          <h4 className="text-xs font-bold text-blue-400 flex items-center gap-2 uppercase tracking-widest">
+                            <FileJson className="w-3.5 h-3.5" /> JSON Output
+                          </h4>
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
                         </div>
-                      )}
+                        <pre className="text-xs bg-black/40 p-4 rounded-xl overflow-x-auto text-blue-100/80 font-mono leading-relaxed max-h-[500px] overflow-y-auto flex-1">
+                          {JSON.stringify(data, null, 2)}
+                        </pre>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="bg-zinc-900 border border-white/5 p-5 rounded-3xl space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                              Analysis Summary
+                            </h4>
+                            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/20 capitalize font-bold">
+                              {result.task_type}
+                            </span>
+                          </div>
+                          
+                          {renderVisualizer()}
+
+                          {hasError && (
+                            <div className="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              <div className="space-y-1">
+                                <p className="font-bold">Validation Warning</p>
+                                <p className="text-[11px] leading-relaxed">{result.output.error}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* OCR tab */}
                 {activeTab === "ocr" && (
