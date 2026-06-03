@@ -16,6 +16,16 @@ def validate_output(schema_class, parsed_output):
     Returns (validated_dict, None) on success,
     or (parsed_output_as_is, None) on failure — never returns an error to the user.
     """
+    # ── TEMPORARY DEBUG: Remove after fixing production ──────────────────────
+    if schema_class is not None:
+        print(f"DEBUG SCHEMA: {schema_class.__name__}")
+        print(f"DEBUG FIELDS: {schema_class.model_fields}")
+        print(f"DEBUG JSON_SCHEMA: {schema_class.model_json_schema()}")
+        if isinstance(parsed_output, dict):
+            print(f"DEBUG ENTITIES_TYPE: {type(parsed_output.get('entities'))}")
+            print(f"DEBUG ENTITIES_VALUE: {parsed_output.get('entities')}")
+    # ── END DEBUG ────────────────────────────────────────────────────────────
+
     if schema_class is None:
         return parsed_output, None
 
